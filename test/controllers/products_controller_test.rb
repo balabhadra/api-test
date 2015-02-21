@@ -11,12 +11,17 @@ class ProductsControllerTest < ActionController::TestCase
     assert_not_nil assigns(:products)
   end
 
+  test "should get new" do
+    get :new
+    assert_response :success
+  end
+
   test "should create product" do
     assert_difference('Product.count') do
       post :create, product: { name: @product.name, price: @product.price }
     end
 
-    assert_response 201
+    assert_redirected_to product_path(assigns(:product))
   end
 
   test "should show product" do
@@ -24,9 +29,14 @@ class ProductsControllerTest < ActionController::TestCase
     assert_response :success
   end
 
+  test "should get edit" do
+    get :edit, id: @product
+    assert_response :success
+  end
+
   test "should update product" do
-    put :update, id: @product, product: { name: @product.name, price: @product.price }
-    assert_response 204
+    patch :update, id: @product, product: { name: @product.name, price: @product.price }
+    assert_redirected_to product_path(assigns(:product))
   end
 
   test "should destroy product" do
@@ -34,6 +44,6 @@ class ProductsControllerTest < ActionController::TestCase
       delete :destroy, id: @product
     end
 
-    assert_response 204
+    assert_redirected_to products_path
   end
 end

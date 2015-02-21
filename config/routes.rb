@@ -1,5 +1,7 @@
 Rails.application.routes.draw do
   
+  resources :products
+
   devise_for :users
   
   devise_scope :user do
@@ -10,7 +12,7 @@ Rails.application.routes.draw do
   
   namespace :api do
     namespace :v1 do
-      devise_for :users, controllers: { sessions: "api/v1/sessions" }      
+      devise_for :users, controllers: { sessions: "api/v1/sessions" }
       resources :products, except: [:new, :edit]
       resources :users, only: [:index, :show]
     end
