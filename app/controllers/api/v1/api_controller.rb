@@ -4,6 +4,8 @@ module Api
   module V1
     class ApiController < ::ActionController::Base
 
+      protect_from_forgery with: :null_session
+      
       respond_to :json
       
       # Define which model will act as token authenticatable. Used to authenticate via token

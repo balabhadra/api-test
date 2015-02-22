@@ -16,6 +16,9 @@ module Api
       skip_before_filter :verify_authenticity_token, if: :json_request?
       skip_filter :verify_signed_out_user, only: :destroy 
 
+      # API protection from CSRF
+      protect_from_forgery with: :null_session, except: [:create]
+      
       # Log user in.
       # POST api/v1/users/sign_in.json
       def create

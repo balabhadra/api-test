@@ -11,9 +11,12 @@ module Api
       # Handle invalid users. This is needed since fallback_to_devise is set to false
       before_filter :validate_user, only: [:update, :destroy]
       
-      #Skip unrequired filters for api
+      # Skip unrequired filters for api
       skip_before_filter :verify_authenticity_token, if: :json_request?
       skip_before_filter :authenticate_scope!, :only => [:update, :destroy]
+      
+      # API protection from CSRF
+      protect_from_forgery with: :null_session, except: [:create]
 
       # User sign up
       # POST /api/v1/users.json
