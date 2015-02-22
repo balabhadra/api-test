@@ -35,7 +35,7 @@ module Api
         @product = Product.find(params[:id])
 
         if @product.update(product_params)
-          head :no_content
+          render json: @product
         else
           render json: @product.errors, status: :unprocessable_entity
         end
@@ -45,7 +45,6 @@ module Api
       # DELETE /products/1.json
       def destroy
         @product.destroy
-
         head :no_content
       end
 
