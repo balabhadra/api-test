@@ -1,11 +1,19 @@
 module Api
   module V1
     class RegistrationsController < ::Devise::RegistrationsController
-      respond_to :json
+      
+      # Authenticate via token+email. 
+      # https://github.com/gonzalo-bulnes/simple_token_authentication
+      # User does not need to authenticate create.
+      # Setting fallback_to_devise to false will not use devise for authentication. This is for security reasons     
+      acts_as_token_authentication_handler_for User, only: [:update, :destroy], fallback_to_devise: false
+      
+      # Handle invalid users. This is needed since fallback_to_devise is set to false
+      before_filter :validate_user, only: [:update, :destroy]
+      
+      #Skip unrequired filters for api
       skip_before_filter :verify_authenticity_token, if: :json_request?
       skip_before_filter :authenticate_scope!, :only => [:update, :destroy]
-
-      acts_as_token_authentication_handler_for User, only: [:update, :destroy], fallback_to_devise: false
 
       # User sign up
       # POST /api/v1/users.json
@@ -21,46 +29,44 @@ module Api
       end
 
       # User sign up
-      # PATCH /api/v1/users/1.json
+      # PATCH /api/v1/users.json
       def update
-        if user_signed_in?
-          # Get a copy of current user
-          self.resource = resource_class.to_adapter.get!(send(:"current_user").to_key)
-          resource_updated = update_resource(resource, update_params)
-          if resource_updated
-            render json: {success: true, user: resource}
-          else
-            clean_up_passwords resource
-            render json: {success:false, errors: resource.errors}, :status => :unprocessable_entity
-          end
+        # Get a copy of current user
+        self.resource = resource_class.to_adapter.get!(send(:"current_user").to_key)
+        resource_updated = update_resource(resource, update_params)
+        if resource_updated
+          render json: {success: true, user: resource}
         else
-          render status: 401, json: { success: false, message: 'Failed to update. You must be logged in.'}
+          clean_up_passwords resource
+          render json: {success:false, errors: resource.errors}, :status => :unprocessable_entity
         end
+
       end
-      
+
       # Delete User
       # POST /api/v1/users.json
       def destroy
-        if user_signed_in?
-          current_user.destroy
-          render status: 200, json: { success: true, message: "User Deleted successfully"}
-        else
-          render status: 401, json: { success: false, message: 'Failed to log out. You must be logged in.'}
-        end
+        current_user.destroy
+        render status: 200, json: { success: true, message: "User Deleted successfully"}
       end
 
-      private
+
+      protected
 
       def permitted_params
         params.require(:user).permit(:username, :email, :password, :password_confirmation, :remember_me)
       end
-      
+
       def update_params
         params.require(:user).permit(:username, :email, :password, :password_confirmation, :current_password)
       end
 
       def json_request?
         request.format.json?
+      end
+
+      def validate_user
+        user_signed_in? || throw(:warden, scope: :user)
       end
     end
   end

@@ -3,18 +3,18 @@ module Api
   module V1
     class SessionsController < ::Devise::SessionsController
 
-      respond_to :json 
-      
-      # Skip CSRF check for json requests.
-      skip_before_filter :verify_authenticity_token, if: :json_request?
-      
       # Authenticate via token+email. 
       # https://github.com/gonzalo-bulnes/simple_token_authentication
+      # User does not need to authenticate create.
+      # Setting fallback_to_devise to false will not use devise for authentication. This is for security reasons
       acts_as_token_authentication_handler_for User, only: [:destroy], fallback_to_devise: false
-
       
-      # Devise filter for logout. Not needed for api access
-      skip_filter :verify_signed_out_user, only: :destroy   
+      # Handle invalid users. This is needed since fallback_to_devise is set to false
+      before_filter :validate_user, only: [:destroy]  
+      
+      # Skip unnecessary filters
+      skip_before_filter :verify_authenticity_token, if: :json_request?
+      skip_filter :verify_signed_out_user, only: :destroy 
 
       # Log user in.
       # POST api/v1/users/sign_in.json
@@ -26,19 +26,19 @@ module Api
       # User logs out. Check if user is a valid user. If valid, reset api authentication token
       # POST api/v1/users/sign_out.json
       def destroy
-        if user_signed_in?
-          @user = current_user
-          @user.authentication_token = nil
-          @user.save
-        else
-          render json: { message: 'Failed to log out. You must be logged in.'}, status: 401
-        end
+        current_user.authentication_token = nil
+        current_user.save
+        render json: {success: true, message: "Logged out successfully"}
       end
 
-      private
+      protected
 
       def json_request?
         request.format.json?
+      end
+
+      def validate_user
+        user_signed_in? || throw(:warden, scope: :user)
       end
 
     end
